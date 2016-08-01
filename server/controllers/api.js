@@ -1,3 +1,4 @@
-/**
- * Created by Demo on 01.08.2016.
- */
+let config = require('../../config');
+let api = {};
+
+module.exports = api;

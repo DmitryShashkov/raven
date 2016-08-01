@@ -1,8 +1,8 @@
-var fs = require('fs');
-var config = require('../../config');
+let fs = require('fs');
+let config = require('../../config');
 
 module.exports = {
-    index: function (req, res, next) {
+    index: (req, res, next) => {
         fs.createReadStream(__dirname + "./../../" + config.server.staticDir + "/index.html")
             .pipe(res);
     }
