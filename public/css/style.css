@@ -3,10 +3,28 @@ body {
 }
 
 .cell {
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     border: 1px solid #9e9e9e;
     display: inline-block;
     box-sizing: border-box;
     margin: 0 -1px -1px 0;
+    vertical-align: top;
+}
+
+.cell.wall {
+    background-size: cover;
+}
+
+.cell.explosion {
+    background-size: 160px 40px;
+}
+
+.cell.tank {
+    background-size: cover;
+}
+
+.cell.shell {
+    background-size: 70% 70%;
+    background-position: center center;
 }
