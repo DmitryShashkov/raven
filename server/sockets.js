@@ -1,5 +1,6 @@
 var config = require('./../public/config');
 var WebSocketServer = new require('ws');
+var api = require('./controllers/api');
 
 var webSocketServer = new WebSocketServer.Server({
     port: config.server.portWS
@@ -7,23 +8,19 @@ var webSocketServer = new WebSocketServer.Server({
 
 console.log('WS listening at port ' + config.server.portWS);
 
-var defaultSettings = {
-    type: 'initial',
-    settings: {
-        width: 11,
-        height: 13
+function processMessage (received, ws) {
+    var message = JSON.parse(received);
+    switch (message.type) {
+        case 'request-game-creation':
+            api.addGame(message.data);
+            break;
+        case 'request-joining-game':
+            api.joinGame(message.data);
+            break;
     }
-};
+}
 
 webSocketServer.on('connection', function(ws) {
-    console.log('New connection!');
-
-    ws.on('message', function(message) {
-        console.log('Received: ' + message);
-    });
-
-    ws.on('close', function() {
-        console.log('Connection closed');
-    });
-
+    api.initiate(ws);
+    ws.on('message', processMessage);
 });

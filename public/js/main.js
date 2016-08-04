@@ -1,162 +1,158 @@
-var cfg = config.game;
-
-var Cell = React.createClass({
+var MainScreen = React.createClass({
     render: function () {
-        var style = {
-            backgroundImage: '',
-            backgroundPosition: ''
-        };
-        var sets = this.props.settings;
-        if (sets.type === cfg.types.WALL) {
-            style.backgroundImage = 'url(img/bricks.png)';
-        }
-        if (sets.type === cfg.types.EXPLOSION) {
-            style.backgroundImage = 'url(img/boom.png)';
-            style.backgroundPosition = '-' + (sets.stage * config.client.cellWidth) + 'px 0';
-        }
-        if (sets.type === cfg.types.TANK) {
-            style.backgroundImage = 'url(img/tank.png)';
-            style.backgroundColor = sets.color;
-            style.transform = 'rotate(' + sets.direction + 'deg)';
-        }
-        if (sets.type === cfg.types.SHELL) {
-            style.backgroundImage = 'url(img/shell.png)';
-            style.backgroundColor = sets.color;
-        }
+        var registeredID = this.props.globalSettings.userID;
         return (
-            <div className={'cell ' + sets.type}
-                 style = {style}>
+            <div className="main-screen">
+                <div>
+                    Hi there, dear {this.props.globalSettings.userName}
+                    </div>
+                <div>
+                    {
+                        (registeredID)
+                            ? 'You are registered with ID #' + registeredID
+                            : 'Registering...'
+                    }
+
+                </div>
+                <div>
+                    <a href="#/games" disabled={!registeredID}>Find games</a>
+                </div>
             </div>
         );
     }
 });
 
-var Row = React.createClass({
-    render: function () {
-        return (
-            <div className="row">
-                {
-                    this.props.elements.map(function (element, index) {
-                        return (
-                            <Cell
-                                settings={element}
-                                key={index}
-                            />
-                        );
-                    })
-                }
-            </div>
-        );
-    }
-});
-
-var ELEMENTS = {
-    walls: [
-        { col: 10, row: 0, type: cfg.types.WALL },
-        { col: 10, row: 1, type: cfg.types.WALL },
-        { col: 10, row: 2, type: cfg.types.WALL },
-        { col: 10, row: 3, type: cfg.types.WALL },
-        { col: 10, row: 4, type: cfg.types.WALL }
-    ],
-    explosions: [
-        { col: 1, row: 2, type: cfg.types.EXPLOSION, stage: 2 }
-    ],
-    shells: [
-        { col: 2, row: 3, type: cfg.types.SHELL, color: cfg.colors.RED },
-        { col: 2, row: 5, type: cfg.types.SHELL, color: cfg.colors.GREEN },
-        { col: 2, row: 7, type: cfg.types.SHELL, color: cfg.colors.BLUE },
-        { col: 2, row: 9, type: cfg.types.SHELL, color: cfg.colors.YELLOW }
-    ],
-    tanks: [
-        { col: 3, row: 3, type: cfg.types.TANK, direction: 90, color: cfg.colors.RED, isMoving: true },
-        { col: 3, row: 5, type: cfg.types.TANK, direction: 90, color: cfg.colors.GREEN, isMoving: true },
-        { col: 3, row: 7, type: cfg.types.TANK, direction: 90, color: cfg.colors.BLUE, isMoving: true },
-        { col: 3, row: 9, type: cfg.types.TANK, direction: 90, color: cfg.colors.YELLOW, isMoving: true }
-    ]
-};
-
-var isConnectionEstablished = false;
-var width = 25;
-var height = 10;
-
-function processMessage (event) {
-    var message = JSON.parse(event.data);
-
-    console.log(message);
-}
-
-var Box = React.createClass({
-    processMessage: processMessage,
-    processTanks: function () {
-        var state = this.state;
-        this.state.elements.tanks.forEach(function (tank) {
-            if (tank.isMoving) {
-                switch (tank.direction) {
-                    case 0: if ((tank.row > 0) && (state.grid[tank.row - 1][tank.col].type === cfg.types.EMPTY)) { tank.row--; } break;
-                    case 90: if ((tank.col < width - 1) && (state.grid[tank.row][tank.col + 1].type === cfg.types.EMPTY)) { tank.col++; } break;
-                    case 180: if ((tank.row < height - 1) && (state.grid[tank.row + 1][tank.col].type === cfg.types.EMPTY)) { tank.row++; } break;
-                    case 270: if ((tank.col > 0) && (state.grid[tank.row][tank.col - 1].type === cfg.types.EMPTY)) { tank.col--; } break;
-                }
+var ListedGame = React.createClass({
+    requestJoiningGame: function () {
+        var message = {
+            type: 'request-joining-game',
+            data: {
+                playerID: this.props.globalSettings.userID,
+                playerName: this.props.globalSettings.userName,
+                ownerID: this.props.owner.id
             }
-        });
-        this.setState({
-            elements: this.state.elements,
-            grid: this.calculateGrid('state')
-        });
-    },
-    processShells: function () {
-        //console.log('shells');
-    },
-    shouldProcessTanks: true,
-    processInteractions: function () {
-        if (this.shouldProcessTanks) {
-            this.processTanks();
-        }
-        this.processShells();
-        this.shouldProcessTanks = !this.shouldProcessTanks;
-    },
-    calculateGrid: function (calculateBy) {
-        var i;
-        var grid = new Array(height);
-        var elms = (calculateBy === 'props')
-            ? this.props.initialElements
-            : this.state.elements;
-        var totalElements = elms.tanks.concat(elms.walls, elms.shells, elms.explosions);
-
-        for (i = 0; i < height; i++) {
-            grid[i] = new Array(width).fill({ type: 'empty' });
-        }
-        totalElements.forEach(function (element) {
-            grid[element.row][element.col] = element;
-        });
-        return grid;
-    },
-    getDefaultProps: function () {
-        var socket = new WebSocket('ws://localhost:1981');
-        socket.onmessage = processMessage;
-        return {
-            initialElements: ELEMENTS,
-            socket: socket
         };
+        this.props.globalSettings.socket.send(JSON.stringify(message));
+    },
+    render: function () {
+        var ownedByMe = this.props.owner.id === this.props.globalSettings.userID;
+        return (
+            <div className="listed-game">
+                <div>
+                    Owner: {this.props.owner.name}
+                    {(ownedByMe) ? '(you)' : ''}
+                </div>
+                <div>
+                    { this.props.participants.length ? 'Participants: ' +
+                    this.props.participants.map(function (el) { return el.name }).join('; ') : ''}
+                </div>
+                <button className={ (ownedByMe) ? '' : 'hidden' }>Start game</button>
+                <button
+                    className={ (ownedByMe) ? 'hidden' : '' }
+                    onClick={this.requestJoiningGame}>
+                    Join
+                </button>
+            </div>
+        );
+    }
+});
+
+var GamesList = React.createClass({
+    requestGameCreation: function () {
+        var message = {
+            type: 'request-game-creation',
+            data: {
+                ownerID: this.props.globalSettings.userID,
+                ownerName: this.props.globalSettings.userName
+            }
+        };
+        this.props.globalSettings.socket.send(JSON.stringify(message));
     },
     getInitialState: function () {
-        setInterval(this.processInteractions, config.game.frequency);
-
         return {
-            grid: this.calculateGrid('props'),
-            elements: this.props.initialElements
-        }
+            games: this.props.gamesList
+        };
     },
     render: function () {
-        console.log('rendered');
+        var globalSettings = this.props.globalSettings;
         return (
-            <div className="box">
-                { this.state.grid.map(function (row, index) {
-                    return (
-                        <Row elements={row} key={index} />
-                    );
-                }) }
+            <div className="games-list">
+                <div>
+                    <a href="#/">Home</a>
+                </div>
+                <div>
+                    <div><span>Games list</span></div>
+                    {
+                        this.props.globalSettings.gamesList.map(function (game, index) {
+                            return (
+                                <ListedGame
+                                    key={index}
+                                    owner={game.owner}
+                                    participants={game.participants}
+                                    globalSettings={globalSettings}
+                                />
+                            );
+                        })
+                    }
+                </div>
+                <button onClick={this.requestGameCreation}>Create</button>
             </div>
         );
     }
 });
+
+function processMessage (received) {
+    var message = JSON.parse(received.data);
+    switch (message.type) {
+        case 'initiate':
+            this.state.userID = message.data.id;
+            this.state.gamesList = message.data.gamesList;
+            this.setState(this.state);
+            break;
+        case 'games-list-updated':
+            this.state.gamesList = message.data.newGamesList;
+            this.setState(this.state);
+            break;
+    }
+}
+var App = React.createClass({
+    getInitialState: function () {
+        var state = {
+            userName: chance.capitalize(chance.word()) + ', ' + chance.suffix(),
+            route: window.location.hash.substr(1),
+            socket: new WebSocket('ws://localhost:1981'),
+            userID: '',
+            gamesList: []
+        };
+        state.socket.onmessage = processMessage.bind(this);
+        return state;
+    },
+    componentDidMount: function () {
+        window.addEventListener('hashchange', (function () {
+            this.setState({
+                route: window.location.hash.substr(1)
+            })
+        }).bind(this))
+    },
+    render: function () {
+        var Child;
+
+        switch (this.state.route) {
+            case '/games': Child = GamesList; break;
+            default: Child = MainScreen;
+        }
+
+        return (
+            <div className='container'>
+                <Child globalSettings={{
+                    userName: this.state.userName,
+                    userID: this.state.userID,
+                    gamesList: this.state.gamesList,
+                    socket: this.state.socket
+                }} />
+            </div>
+        )
+    }
+});
+
+
