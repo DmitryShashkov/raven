@@ -1,4 +1,4 @@
-var config = require('./../config');
+var config = require('./../public/config');
 var WebSocketServer = new require('ws');
 
 var webSocketServer = new WebSocketServer.Server({
