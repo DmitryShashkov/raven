@@ -1,7 +1,7 @@
 var config = {
     server: {
         host: 'localhost',
-        port: 1337,
+        port: 80,
         portWS: 1981,
         staticDir: 'public'
     },
