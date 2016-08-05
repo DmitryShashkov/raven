@@ -23,6 +23,12 @@ function processMessage (received, ws) {
         case 'request-game-disbanding':
             api.disbandGame(message.data);
             break;
+        case 'request-game-start':
+            api.processGameStart(message.data);
+            break;
+        case 'key-pressed':
+            api.processKeyPressed(message.data);
+            break;
     }
 }
 

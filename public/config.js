@@ -10,6 +10,7 @@ var config = {
     },
     game: {
         frequency: 125,
+        maxPlayersAmount: 7,
         types: {
             WALL: 'wall',
             EXPLOSION: 'explosion',
@@ -21,7 +22,20 @@ var config = {
             RED: '#ff0000',
             GREEN: '#00ff00',
             BLUE: '#0000ff',
-            YELLOW: '#00ffff'
+            AQUA: '#00ffff',
+            FUCHSIA: '#ff00ff',
+            YELLOW: '#ffff00',
+            WHITE: '#ffffff'
+        },
+        buttons: {
+            UP: 87,
+            DOWN: 83,
+            LEFT: 65,
+            RIGHT: 68
+        },
+        defaults: {
+            mapWidth: 20,
+            mapHeight: 15
         }
     }
 };

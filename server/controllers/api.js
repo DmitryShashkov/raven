@@ -1,12 +1,14 @@
 var config = require('../../public/config');
 var underscore = require('underscore');
+var mapper = require('./../utils/mapper');
 
 var api = {};
 var clients = [];
-var games = [];
+var pendingGames = [];
+var gamesInProgress = [];
 
-function broadcast (message) {
-    clients.forEach(function (client) {
+function broadcast (message, recipients) {
+    (recipients || clients).forEach(function (client) {
         try {
             client.ws.send(JSON.stringify(message));
         } catch (exc) {
@@ -26,7 +28,7 @@ api.initiate = function (ws) {
         type: 'initiate',
         data: {
             id: newClient.id,
-            gamesList: games
+            gamesList: pendingGames
         }
     };
     newClient.ws.send(JSON.stringify(initialMessage));
@@ -43,10 +45,15 @@ api.initiate = function (ws) {
 
 
 function removeGameByOwnerID (ownerID) {
-    var owners = games.map(function (game) {
+    var owners = pendingGames.map(function (game) {
         return game.owner;
     });
-    games = underscore.without(games, underscore.findWhere(games, {
+    pendingGames = underscore.without(pendingGames, underscore.findWhere(pendingGames, {
+        owner: underscore.findWhere(owners, {
+            id: ownerID
+        })
+    }));
+    gamesInProgress = underscore.without(gamesInProgress, underscore.findWhere(gamesInProgress, {
         owner: underscore.findWhere(owners, {
             id: ownerID
         })
@@ -54,12 +61,12 @@ function removeGameByOwnerID (ownerID) {
     broadcast({
         type: 'games-list-updated',
         data: {
-            newGamesList: games
+            newGamesList: pendingGames
         }
     });
 }
 function removeParticipantByID (playerID) {
-    games.forEach(function (game) {
+    pendingGames.forEach(function (game) {
         var thatGuy = underscore.findWhere(game.participants, {
             id: playerID
         });
@@ -70,7 +77,7 @@ function removeParticipantByID (playerID) {
 api.addGame = function (messageData) {
     removeGameByOwnerID(messageData.ownerID);
     removeParticipantByID(messageData.ownerID);
-    games.push({
+    pendingGames.push({
         owner: {
             id: messageData.ownerID,
             name: messageData.ownerName,
@@ -80,7 +87,7 @@ api.addGame = function (messageData) {
     broadcast({
         type: 'games-list-updated',
         data: {
-            newGamesList: games
+            newGamesList: pendingGames
         }
     });
 };
@@ -88,10 +95,10 @@ api.addGame = function (messageData) {
 api.joinGame = function (messageData) {
     removeGameByOwnerID(messageData.playerID);
     removeParticipantByID(messageData.playerID);
-    var owners = games.map(function (game) {
+    var owners = pendingGames.map(function (game) {
         return game.owner;
     });
-    var targetGame = underscore.findWhere(games, {
+    var targetGame = underscore.findWhere(pendingGames, {
         owner: underscore.findWhere(owners, {
             id: messageData.ownerID
         })
@@ -103,7 +110,7 @@ api.joinGame = function (messageData) {
     broadcast({
         type: 'games-list-updated',
         data: {
-            newGamesList: games
+            newGamesList: pendingGames
         }
     });
 };
@@ -113,7 +120,7 @@ api.leaveGame = function (messageData) {
     broadcast({
         type: 'games-list-updated',
         data: {
-            newGamesList: games
+            newGamesList: pendingGames
         }
     });
 };
@@ -123,9 +130,92 @@ api.disbandGame = function (messageData) {
     broadcast({
         type: 'games-list-updated',
         data: {
-            newGamesList: games
+            newGamesList: pendingGames
         }
     });
+};
+
+api.processGameStart = function (messageData) {
+    var owners = pendingGames.map(function (game) {
+        return game.owner;
+    });
+    var targetGame = underscore.findWhere(pendingGames, {
+        owner: underscore.findWhere(owners, {
+            id: messageData.ownerID
+        })
+    });
+    var newGameID = 'g' + (new Date()).valueOf();
+
+    var map = mapper.getMap(targetGame.participants.length + 1); // + owner
+    var recipients = targetGame.participants.map(function (participant) {
+        return underscore.findWhere(clients, {
+            id: participant.id
+        });
+    }).concat(underscore.findWhere(clients, {
+        id: targetGame.owner.id
+    }));
+    broadcast({
+        type: 'game-initiate',
+        data: {
+            map: map,
+            gameID: newGameID
+        }
+    }, recipients);
+
+    targetGame.id = newGameID;
+    targetGame.map = map;
+    recipients.forEach(function (client, index) {
+        targetGame.map.elements.tanks[index].userID = client.id;
+        client.ws.send(JSON.stringify({
+            type: 'personal-color-set',
+            data: {
+                color: targetGame.map.elements.tanks[index].color
+            }
+        }));
+    });
+
+    removeGameByOwnerID(messageData.ownerID);
+    gamesInProgress.push(targetGame);
+};
+
+api.processKeyPressed = function (messageData) {
+    var targetGame = underscore.findWhere(gamesInProgress, {
+        id: messageData.gameID
+    });
+    var tanks = targetGame.map.elements.tanks;
+    var triggeredTank = underscore.findWhere(tanks, {
+        userID: messageData.playerID
+    });
+    var buttons = config.game.buttons;
+    switch (messageData.keyCode) {
+        case buttons.UP:
+            triggeredTank.direction = 0;
+            break;
+        case buttons.RIGHT:
+            triggeredTank.direction = 90;
+            break;
+        case buttons.DOWN:
+            triggeredTank.direction = 180;
+            break;
+        case buttons.LEFT:
+            triggeredTank.direction = 270;
+            break;
+    }
+    var recipients = targetGame.participants.map(function (participant) {
+        return underscore.findWhere(clients, {
+            id: participant.id
+        });
+    }).concat(underscore.findWhere(clients, {
+        id: targetGame.owner.id
+    }));
+    broadcast({
+        type: 'game-state-changed',
+        data: {
+            subType: 'direction',
+            tankColor: triggeredTank.color,
+            newDirection: triggeredTank.direction
+        }
+    }, recipients);
 };
 
 module.exports = api;

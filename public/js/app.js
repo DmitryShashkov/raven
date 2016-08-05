@@ -10,6 +10,24 @@ function processMessage (received) {
             this.state.gamesList = message.data.newGamesList;
             this.setState(this.state);
             break;
+        case 'game-initiate':
+            this.state.map = message.data.map;
+            this.state.gameID = message.data.gameID;
+            this.setState(this.state);
+            window.location.href = '#/play';
+            break;
+        case 'personal-color-set':
+            console.log('You are ' + message.data.color);
+            break;
+        case 'game-state-changed':
+            if (message.data.subType === 'direction') {
+                _.findWhere(this.state.map.elements.tanks, {
+                    color: message.data.tankColor
+                }).direction = message.data.newDirection;
+            }
+
+            this.setState(this.state);
+            break;
     }
 }
 var App = React.createClass({
@@ -36,17 +54,13 @@ var App = React.createClass({
 
         switch (this.state.route) {
             case '/games': Child = GamesList; break;
+            case '/play': Child = GameBox; break;
             default: Child = MainScreen;
         }
 
         return (
             <div className='container'>
-                <Child globalSettings={{
-                    userName: this.state.userName,
-                    userID: this.state.userID,
-                    gamesList: this.state.gamesList,
-                    socket: this.state.socket
-                }} />
+                <Child globalSettings={this.state} />
             </div>
         )
     }

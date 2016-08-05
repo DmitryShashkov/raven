@@ -29,12 +29,22 @@ var ListedGame = React.createClass({
         };
         this.props.globalSettings.socket.send(JSON.stringify(message));
     },
+    requestGameStart: function () {
+        var message = {
+            type: 'request-game-start',
+            data: {
+                ownerID: this.props.globalSettings.userID
+            }
+        };
+        this.props.globalSettings.socket.send(JSON.stringify(message));
+    },
     render: function () {
         var ownedByMe = this.props.owner.id === this.props.globalSettings.userID;
         var participantIDs = this.props.participants.map(function (el) {
             return el.id;
         });
         var amParticipating = _.contains(participantIDs, this.props.globalSettings.userID);
+        var isFull = this.props.participants.length + 1 >= config.game.maxPlayersAmount;
         return (
             <div className="listed-game">
                 <div>
@@ -45,14 +55,18 @@ var ListedGame = React.createClass({
                     { this.props.participants.length ? 'Participants: ' +
                     this.props.participants.map(function (el) { return el.name }).join('; ') : ''}
                 </div>
-                <button className={ (ownedByMe) ? '' : 'hidden' }>Start game</button>
+                <button
+                    className={ (ownedByMe) ? '' : 'hidden' }
+                    onClick={ this.requestGameStart }>
+                    Start game
+                </button>
                 <button
                     className={ (ownedByMe) ? '' : 'hidden' }
                     onClick={ this.requestGameDisbanding }>
                     Disband
                 </button>
                 <button
-                    className={ (ownedByMe || amParticipating) ? 'hidden' : '' }
+                    className={ (ownedByMe || amParticipating || isFull) ? 'hidden' : '' }
                     onClick={ this.requestJoiningGame }>
                     Join
                 </button>
