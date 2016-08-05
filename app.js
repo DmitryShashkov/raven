@@ -16,6 +16,6 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 app.use(router);
 
-app.listen(config.server.port, function () {
+app.listen(process.env.PORT || config.server.port, function () {
     console.log('Express listening at port ' + config.server.port);
 });
