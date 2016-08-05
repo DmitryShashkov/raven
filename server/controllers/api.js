@@ -35,6 +35,7 @@ api.initiate = function (ws) {
         clients = underscore.without(clients, underscore.findWhere(clients, {
             id: newClient.id
         }));
+        removeParticipantByID(newClient.id);
         removeGameByOwnerID(newClient.id);
         console.log('Connection closed: ' + newClient.id);
     });
@@ -63,12 +64,6 @@ function removeParticipantByID (playerID) {
             id: playerID
         });
         game.participants = underscore.without(game.participants, thatGuy);
-    });
-    broadcast({
-        type: 'games-list-updated',
-        data: {
-            newGamesList: games
-        }
     });
 }
 
@@ -105,6 +100,26 @@ api.joinGame = function (messageData) {
         id: messageData.playerID,
         name: messageData.playerName
     });
+    broadcast({
+        type: 'games-list-updated',
+        data: {
+            newGamesList: games
+        }
+    });
+};
+
+api.leaveGame = function (messageData) {
+    removeParticipantByID(messageData.playerID);
+    broadcast({
+        type: 'games-list-updated',
+        data: {
+            newGamesList: games
+        }
+    });
+};
+
+api.disbandGame = function (messageData) {
+    removeGameByOwnerID(messageData.ownerID);
     broadcast({
         type: 'games-list-updated',
         data: {

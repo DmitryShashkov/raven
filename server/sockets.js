@@ -17,6 +17,12 @@ function processMessage (received, ws) {
         case 'request-joining-game':
             api.joinGame(message.data);
             break;
+        case 'request-leaving-game':
+            api.leaveGame(message.data);
+            break;
+        case 'request-game-disbanding':
+            api.disbandGame(message.data);
+            break;
     }
 }
 
