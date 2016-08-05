@@ -20,12 +20,12 @@ function processMessage (received) {
             console.log('You are ' + message.data.color);
             break;
         case 'game-state-changed':
-            if (message.data.subType === 'direction') {
-                _.findWhere(this.state.map.elements.tanks, {
-                    color: message.data.tankColor
-                }).direction = message.data.newDirection;
-            }
-
+            // if (message.data.subType === 'direction') {
+            //     _.findWhere(this.state.map.elements.tanks, {
+            //         color: message.data.tankColor
+            //     }).direction = message.data.newDirection;
+            // }
+            this.state.map.elements = message.data.newElements;
             this.setState(this.state);
             break;
     }

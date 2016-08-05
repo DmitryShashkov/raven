@@ -167,9 +167,10 @@ api.processGameStart = function (messageData) {
     recipients.forEach(function (client, index) {
         targetGame.map.elements.tanks[index].userID = client.id;
         client.ws.send(JSON.stringify({
-            type: 'personal-color-set',
+            type: 'game-state-changed',
             data: {
-                color: targetGame.map.elements.tanks[index].color
+                // color: targetGame.map.elements.tanks[index].color
+                newElements: targetGame.map.elements
             }
         }));
     });
@@ -182,6 +183,7 @@ api.processKeyPressed = function (messageData) {
     var targetGame = underscore.findWhere(gamesInProgress, {
         id: messageData.gameID
     });
+    targetGame.map.elements = messageData.currentElements;
     var tanks = targetGame.map.elements.tanks;
     var triggeredTank = underscore.findWhere(tanks, {
         userID: messageData.playerID
@@ -211,9 +213,10 @@ api.processKeyPressed = function (messageData) {
     broadcast({
         type: 'game-state-changed',
         data: {
-            subType: 'direction',
-            tankColor: triggeredTank.color,
-            newDirection: triggeredTank.direction
+            // subType: 'direction',
+            // tankColor: triggeredTank.color,
+            // newDirection: triggeredTank.direction
+            newElements: targetGame.map.elements
         }
     }, recipients);
 };

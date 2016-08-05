@@ -77,7 +77,8 @@ var GameBox = React.createClass({
             data: {
                 gameID: this.props.globalSettings.gameID,
                 playerID: this.props.globalSettings.userID,
-                keyCode: event.keyCode
+                keyCode: event.keyCode,
+                currentElements: this.state.elements
             }
         };
         this.props.globalSettings.socket.send(JSON.stringify(message));
