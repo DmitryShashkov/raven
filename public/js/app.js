@@ -35,7 +35,7 @@ var App = React.createClass({
         var state = {
             userName: chance.capitalize(chance.word()) + ', ' + chance.suffix(),
             route: window.location.hash.substr(1),
-            socket: new WebSocket('wss://localhost:1981'),
+            socket: new WebSocket('wss://quote-the-raven.herokuapp.com:1981'),
             userID: '',
             gamesList: []
         };
