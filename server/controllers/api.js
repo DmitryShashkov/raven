@@ -221,4 +221,28 @@ api.processKeyPressed = function (messageData) {
     }, recipients);
 };
 
+api.processMessage = function  (received, ws) {
+    var message = JSON.parse(received);
+    switch (message.type) {
+        case 'request-game-creation':
+            api.addGame(message.data);
+            break;
+        case 'request-joining-game':
+            api.joinGame(message.data);
+            break;
+        case 'request-leaving-game':
+            api.leaveGame(message.data);
+            break;
+        case 'request-game-disbanding':
+            api.disbandGame(message.data);
+            break;
+        case 'request-game-start':
+            api.processGameStart(message.data);
+            break;
+        case 'key-pressed':
+            api.processKeyPressed(message.data);
+            break;
+    }
+};
+
 module.exports = api;
