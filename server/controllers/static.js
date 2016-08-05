@@ -1,5 +1,5 @@
-let fs = require('fs');
-let config = require('../../public/config');
+var fs = require('fs');
+var config = require('../../public/config');
 
 module.exports = {
     index: (req, res, next) => {
